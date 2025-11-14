@@ -1,4 +1,4 @@
-# Query Creafter
+# Query Crafter
 A local AI agent, building and executing sql queries based on user prompt. With a minimal UI.
 
 ## Setup
