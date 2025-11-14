@@ -1,5 +1,12 @@
-# TODO: clean up. Unify environment variables.
-# NOTE: remove secrets before using in production.
+version: "3.8"
+
+x-defaults: &defaults
+  restart: unless-stopped
+  environment:
+    POSTGRES_DB: pg_db
+    POSTGRES_USER: user
+    POSTGRES_PASSWORD: supersecurepassword
+
 services:
   ollama:
     build:
@@ -8,6 +15,7 @@ services:
     container_name: ollama
     ports:
       - "11434:11434"
+    <<: *defaults
     deploy:
     # comment this section if there is no nvidia gpu available, or if the gpu is not set up.
       resources:
@@ -17,38 +25,34 @@ services:
               count: all
               capabilities: [gpu]
     restart: unless-stopped
+
   db:
     build:
       context: .
       dockerfile: Dockerfile.db
     container_name: postgres-db
-    environment:
-      POSTGRES_DB: pg_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: supersecurepassword
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    <<: *defaults
+
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
     container_name: web
-    environment:
-      OLLAMA_HOST: ollama
-      OLLAMA_PORT: 11434
-      PGHOST: db
-      PGPORT: 5432
-      POSTGRES_DB: pg_db
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: supersecurepassword
     ports:
       - "8000:8000"
     depends_on:
       - db
       - ollama
+    <<: *defaults
+    environment:
+      OLLAMA_HOST: ollama
+      OLLAMA_PORT: "11434"
+      PGHOST: db
+      PGPORT: "5432"
 
 volumes:
   pgdata:
