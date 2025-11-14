@@ -2,7 +2,7 @@
 A local agent, building and executing sql queries based on user prompt. With a minimal UI.
 
 ## Setup
-To setup rename the `*.gguf` model file and copy the `model.gguf` file to main directory.
+To setup rename the `*.gguf` model file to `model.gguf`. Then copy the `model.gguf` file to main directory of project.
 We used `sqlcoder-7b-2.Q4_K_M.gguf` found in [here](https://huggingface.co/MaziyarPanahi/sqlcoder-7b-2-GGUF/blob/main/sqlcoder-7b-2.Q4_K_M.gguf). we recommend using the same.
 
 After providing the model file you can run the project like 
