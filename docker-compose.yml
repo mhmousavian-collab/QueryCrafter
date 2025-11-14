@@ -1,5 +1,7 @@
 version: "3.8"
 
+# NOTE: remove secrets before using in production.
+
 x-defaults: &defaults
   restart: unless-stopped
   environment:
