@@ -1,0 +1,13 @@
+# Dockerfile.web
+FROM docker.arvancloud.ir/python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements_web.txt .
+RUN pip install --no-cache-dir -r requirements_web.txt
+
+# Copy the code
+COPY web_app.py index.html /app/
+
+EXPOSE 8000
+CMD ["uvicorn", "web_app:app", "--host", "0.0.0.0", "--port", "8000"]

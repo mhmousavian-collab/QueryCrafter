@@ -1,0 +1,20 @@
+FROM postgres:15
+
+WORKDIR /app
+
+# Install python3-venv and pip
+RUN apt-get update && apt-get install -y python3-pip python3-venv && rm -rf /var/lib/apt/lists/*
+
+# Create a virtual environment
+RUN python3 -m venv /app/venv
+
+# Copy requirements and install into venv
+COPY requirements_db.txt .
+RUN /app/venv/bin/pip install --no-cache-dir -r requirements_db.txt
+
+# Copy seeder
+COPY seed_db.py /app/seed_db.py
+RUN chmod +x /app/seed_db.py
+
+# Entrypoint: start postgres, then seed using venv python
+ENTRYPOINT ["bash","-c","docker-entrypoint.sh postgres & sleep 5 && /app/venv/bin/python /app/seed_db.py && wait"]

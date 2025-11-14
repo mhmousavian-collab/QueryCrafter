@@ -1,0 +1,3 @@
+--index-url https://mirror-pypi.runflare.com
+Faker==38.0.0
+psycopg2-binary==2.9.11

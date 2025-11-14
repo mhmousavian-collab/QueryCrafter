@@ -1,0 +1,150 @@
+<div id="querycraft-ui" style="max-width:1000px;margin:20px auto;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <form id="qc-form" style="display:flex;gap:8px;align-items:center">
+    <input id="qc-question" type="text" placeholder="Ask a question (e.g. how many orders...)" style="flex:1;padding:10px;border-radius:6px;border:1px solid #ddd" />
+    <button type="submit" style="padding:10px 14px;border-radius:6px">Run</button>
+  </form>
+
+  <div style="display:flex;gap:16px;margin-top:16px;align-items:flex-start">
+    <div style="flex:1;min-width:0">
+      <label style="font-weight:600;display:block;margin-bottom:6px">Generated SQL</label>
+      <pre id="qc-sql" style="white-space:pre-wrap;word-break:break-word;padding:12px;border:1px solid #e2e8f0;border-radius:8px;min-height:140px;background:#f8fafc;overflow:auto"></pre>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="qc-copy-sql" disabled style="padding:8px 10px;border-radius:6px">Copy SQL</button>
+        <button id="qc-run-again" disabled style="padding:8px 10px;border-radius:6px">Run SQL (re-use)</button>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0">
+      <label style="font-weight:600;display:block;margin-bottom:6px">CSV Preview</label>
+      <textarea id="qc-csv" readonly style="width:100%;height:320px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;overflow:auto"></textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button id="qc-download" disabled style="padding:8px 12px;border-radius:6px">Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="qc-status" style="margin-top:12px;color:#555;font-size:13px"></div>
+</div>
+<script>
+(function(){
+  const form = document.getElementById('qc-form');
+  const qInput = document.getElementById('qc-question');
+  const sqlEl = document.getElementById('qc-sql');
+  const csvEl = document.getElementById('qc-csv');
+  const statusEl = document.getElementById('qc-status');
+  const dlBtn = document.getElementById('qc-download');
+  const copyBtn = document.getElementById('qc-copy-sql');
+  const runAgainBtn = document.getElementById('qc-run-again');
+
+  function setIdle() {
+    statusEl.textContent = '';
+  }
+
+  function setRunning() {
+    statusEl.textContent = 'Running…';
+  }
+
+  function setError(msg) {
+    statusEl.textContent = 'Error: ' + msg;
+  }
+
+  function enableControls(csv, sql) {
+    dlBtn.disabled = !csv;
+    copyBtn.disabled = !sql;
+    runAgainBtn.disabled = !sql;
+  }
+
+  // download handler
+  dlBtn.addEventListener('click', () => {
+    const csv = csvEl.value || '';
+    if (!csv) return;
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'query_result.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  // copy SQL handler
+  copyBtn.addEventListener('click', async () => {
+    const sql = sqlEl.textContent || '';
+    if (!sql) return;
+    try {
+      await navigator.clipboard.writeText(sql);
+      statusEl.textContent = 'SQL copied to clipboard';
+      setTimeout(setIdle, 1500);
+    } catch (e) {
+      setError('Could not copy SQL');
+    }
+  });
+
+  // run-again handler: place generated SQL into question box
+  runAgainBtn.addEventListener('click', () => {
+    const sql = sqlEl.textContent || '';
+    if (!sql) return;
+    qInput.value = sql;
+    qInput.focus();
+  });
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const q = qInput.value.trim();
+    sqlEl.textContent = '';
+    csvEl.value = '';
+    enableControls('', '');
+    if (!q) {
+      setError('Please enter a question.');
+      return;
+    }
+    setRunning();
+
+    try {
+      const resp = await fetch('/api/query', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question: q})
+      });
+
+      if (resp.ok) {
+        const ctype = resp.headers.get('content-type') || '';
+        if (ctype.includes('application/json')) {
+          const data = await resp.json();
+          const sql = data.sql || '';
+          const csv = data.csv || '';
+          sqlEl.textContent = sql;
+          csvEl.value = csv;
+          enableControls(csv, sql);
+          statusEl.textContent = 'Success';
+        } else {
+          // fallback: server returned CSV attachment; fetch blob and show
+          const blob = await resp.blob();
+          const text = await blob.text();
+          sqlEl.textContent = '';
+          csvEl.value = text;
+          enableControls(text, '');
+          statusEl.textContent = 'Downloaded CSV (server attachment)';
+        }
+      } else {
+        // parse structured error if available
+        let body;
+        try { body = await resp.json(); } catch(e) { body = null; }
+        if (body && body.error) {
+          sqlEl.textContent = body.error.sql || '';
+          csvEl.value = '';
+          enableControls('', '');
+          setError(body.error.generate || body.error.validate || body.error.execute || 'Validation failed');
+        } else {
+          setError('Request failed: ' + resp.status);
+        }
+      }
+    } catch (err) {
+      setError(err.message || err);
+      console.error(err);
+    }
+  });
+})();
+</script>
