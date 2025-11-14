@@ -1,0 +1,10 @@
+FROM docker.arvancloud.ir/ollama/ollama
+
+# Create model directory and copy files
+RUN mkdir -p /root/.ollama/models
+COPY model.gguf /root/.ollama/models/
+COPY Modelfile /root/.ollama/
+
+# Override entrypoint to run shell commands
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["ollama serve & sleep 2 && ollama create sqlcoder -f /root/.ollama/Modelfile && wait"]
