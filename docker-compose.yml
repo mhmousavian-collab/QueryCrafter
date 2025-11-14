@@ -9,6 +9,7 @@ services:
     ports:
       - "11434:11434"
     deploy:
+    # comment this section if there is no nvidia gpu available, or if the gpu is not set up.
       resources:
         reservations:
           devices:
