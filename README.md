@@ -13,7 +13,7 @@ $ docker compose up --build -d
 The UI will be exposed at `localhost:8000`.
 
 ## GPU availability
-We duilt and tested this software on a machine with a **NVIDIA GeForce RTX 3050**.
+We built and tested this software on a machine with a **NVIDIA GeForce RTX 3050** GPU.
 If you don't have access to an Nvidia GPU, comment reserved resources for `ollama` service in `docker-compose.yml`.
 
 ## Notes
