@@ -1,5 +1,5 @@
 # Query Creafter
-A local agent, building and executing sql queries based on user prompt. With a minimal UI.
+A local AI agent, building and executing sql queries based on user prompt. With a minimal UI.
 
 ## Setup
 To setup rename the `*.gguf` model file to `model.gguf`. Then copy the `model.gguf` file to main directory of project.
